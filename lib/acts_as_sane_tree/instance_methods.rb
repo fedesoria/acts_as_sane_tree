@@ -8,13 +8,13 @@ module ActsAsSaneTree
           SELECT #{self.class.configuration[:class].table_name}.*,
           1 AS depth
           FROM #{self.class.configuration[:class].table_name}
-          WHERE id = #{id} 
+          WHERE #{configuration[:primary_key]} = #{configuration[:primary_key]} 
           UNION ALL
           SELECT alias1.*, 
           depth + 1 
           FROM crumbs
-          JOIN #{self.class.configuration[:class].table_name} alias1 ON alias1.id = crumbs.parent_id
-        ) SELECT * FROM crumbs WHERE crumbs.id != #{id}) as #{self.class.configuration[:class].table_name}"
+          JOIN #{self.class.configuration[:class].table_name} alias1 ON alias1.#{configuration[:primary_key]} = crumbs.#{configuration[:foreign_key]}
+        ) SELECT * FROM crumbs WHERE crumbs.#{configuration[:primary_key]} != #{configuration[:primary_key]}) as #{self.class.configuration[:class].table_name}"
       if(self.class.rails_3?)
         self.class.configuration[:class].send(:with_exclusive_scope) do
           self.class.configuration[:class].from(
@@ -52,7 +52,7 @@ module ActsAsSaneTree
     
     # Returns if the current node is a root
     def root?
-      parent_id.nil?
+      eval("#{configuration[:foreign_key]}.nil?")
     end
     
     # Returns all descendants of the current node. Each level
@@ -84,13 +84,13 @@ module ActsAsSaneTree
     def depth
       query = 
         "WITH RECURSIVE crumbs AS (
-          SELECT parent_id, 0 AS level
+          SELECT #{configuration[:foreign_key]}, 0 AS level
           FROM #{self.class.configuration[:class].table_name}
-          WHERE id = #{self.id} 
+          WHERE #{configuration[:primary_key]} = #{self.send(configuration[:primary_key])} 
           UNION ALL
-          SELECT alias1.parent_id, level + 1 
+          SELECT alias1.#{configuration[:foreign_key]}, level + 1 
           FROM crumbs
-          JOIN #{self.class.configuration[:class].table_name} alias1 ON alias1.id = crumbs.parent_id
+          JOIN #{self.class.configuration[:class].table_name} alias1 ON alias1.#{configuration[:primary_key]} = crumbs.#{configuration[:foreign_key]}
         ) SELECT level FROM crumbs ORDER BY level DESC LIMIT 1"
       ActiveRecord::Base.connection.select_all(query).first.try(:[], 'level').try(:to_i)
     end
