@@ -44,10 +44,10 @@ module ActsAsSaneTree
       else
         q = configuration[:class].connection.select_all(
           "WITH RECURSIVE crumbs AS (
-            SELECT #{configuration[:class].table_name}.*, 0 AS level FROM #{configuration[:class].table_name} WHERE #{configuration[:primary_key]} in (#{s.join(', ')})
+            SELECT #{configuration[:class].table_name}.*, 0 AS level FROM #{configuration[:class].table_name} WHERE #{configuration[:primary_key]} IN (#{s.join(', ')})
             UNION ALL
             SELECT alias1.*, crumbs.level + 1 FROM crumbs JOIN #{configuration[:class].table_name} alias1 on alias1.#{configuration[:foreign_key]} = crumbs.#{configuration[:primary_key]}
-          ) SELECT count(*) as count FROM crumbs WHERE #{configuration[:primary_key]} in (#{c.join(', ')})"
+          ) SELECT count(*) as count FROM crumbs WHERE #{configuration[:primary_key]} IN (#{c.join(', ')})"
         )
         q.first['count'].to_i > 0
       end
@@ -64,11 +64,11 @@ module ActsAsSaneTree
       else
         query = 
           "(WITH RECURSIVE crumbs AS (
-            SELECT #{configuration[:class].table_name}.*, 0 AS depth FROM #{configuration[:class].table_name} WHERE #{configuration[:primary_key]} in (#{s.join(', ')})
+            SELECT #{configuration[:class].table_name}.*, 0 AS depth FROM #{configuration[:class].table_name} WHERE #{configuration[:primary_key]} IN (#{s.join(', ')})
             UNION ALL
             SELECT alias1.*, crumbs.depth + 1 FROM crumbs JOIN #{configuration[:class].table_name} alias1 on alias1.#{configuration[:foreign_key]} = crumbs.#{configuration[:primary_key]}
             #{configuration[:max_depth] ? "WHERE crumbs.depth + 1 < #{configuration[:max_depth].to_i}" : ''}
-          ) SELECT * FROM crumbs WHERE #{configuration[:primary_key]} in (#{c.join(', ')})) as #{configuration[:class].table_name}"
+          ) SELECT * FROM crumbs WHERE #{configuration[:primary_key]} IN (#{c.join(', ')})) as #{configuration[:class].table_name}"
         if(rails_3?)
           configuration[:class].from(query)
         else
@@ -106,7 +106,7 @@ module ActsAsSaneTree
       base_ids = args.map{|x| x.is_a?(ActiveRecord::Base) ? eval("x.#{configuration[:primary_key]}") : x.to_s}
       query = 
         "(WITH RECURSIVE crumbs AS (
-          SELECT #{configuration[:class].table_name}.*, #{no_self ? -1 : 0} AS depth FROM #{configuration[:class].table_name} WHERE #{base_ids.empty? ? '#{configuration[:foreign_key]} IS NULL' : "#{configuration[:primary_key]} in #{base_ids.join(', ')}"}
+          SELECT #{configuration[:class].table_name}.*, #{no_self ? -1 : 0} AS depth FROM #{configuration[:class].table_name} WHERE #{base_ids.empty? ? '#{configuration[:foreign_key]} IS NULL' : "#{configuration[:primary_key]} IN (#{base_ids.join(', ')})"}
           UNION ALL
           SELECT alias1.*, crumbs.depth + 1 FROM crumbs JOIN #{configuration[:class].table_name} alias1 on alias1.#{configuration[:foreign_key]} = crumbs.#{configuration[:primary_key]}
           #{depth_restriction}
