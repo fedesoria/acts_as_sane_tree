@@ -42,12 +42,12 @@ module ActsAsSaneTree
   #   * {:at_depth => n} - Will return times at given depth (takes precedence over :depth/:to_depth)
   module ClassMethods
     # Configuration options are:
-    #
+    # * <tt>primary_key</tt> - specifies the primary key
     # * <tt>foreign_key</tt> - specifies the column name to use for tracking of the tree (default: +parent_id+)
     # * <tt>order</tt> - makes it possible to sort the children according to this SQL snippet.
     # * <tt>counter_cache</tt> - keeps a count in a +children_count+ column if set to +true+ (default: +false+).
     def acts_as_sane_tree(options = {})
-      @configuration = {:foreign_key => :parent_id, :order => nil, :max_depth => 100000, :class => self, :dependent => :destroy, :parent_override => false}
+      @configuration = {:primary_key => :id, :foreign_key => :parent_id, :order => nil, :max_depth => 100000, :class => self, :dependent => :destroy, :parent_override => false}
       @configuration.update(options) if options.is_a?(Hash)
 
       self.class_eval do
@@ -55,11 +55,13 @@ module ActsAsSaneTree
         
         has_many :children, 
           :class_name => @configuration[:class].name, 
+          :primary_key => @configuration[:primary_key],
           :foreign_key => @configuration[:foreign_key], 
           :order => @configuration[:order], 
           :dependent => @configuration[:dependent]
         belongs_to :parent, 
-          :class_name => @configuration[:class].name, 
+          :class_name => @configuration[:class].name,
+          :primary_key => @configuration[:primary_key],
           :foreign_key => @configuration[:foreign_key]
         if(@configuration[:parent_override])
           def parent
