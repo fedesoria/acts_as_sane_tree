@@ -106,7 +106,7 @@ module ActsAsSaneTree
       base_ids = args.map{|x| x.is_a?(ActiveRecord::Base) ? eval("x.#{configuration[:primary_key]}") : x.to_s}
       query = 
         "(WITH RECURSIVE crumbs AS (
-          SELECT #{configuration[:class].table_name}.*, #{no_self ? -1 : 0} AS depth FROM #{configuration[:class].table_name} WHERE #{base_ids.empty? ? '#{configuration[:foreign_key]} IS NULL' : "#{configuration[:primary_key]} in (#{base_ids.join(', ')})"}
+          SELECT #{configuration[:class].table_name}.*, #{no_self ? -1 : 0} AS depth FROM #{configuration[:class].table_name} WHERE #{base_ids.empty? ? '#{configuration[:foreign_key]} IS NULL' : "#{configuration[:primary_key]} in #{base_ids.join(', ')}"}
           UNION ALL
           SELECT alias1.*, crumbs.depth + 1 FROM crumbs JOIN #{configuration[:class].table_name} alias1 on alias1.#{configuration[:foreign_key]} = crumbs.#{configuration[:primary_key]}
           #{depth_restriction}
